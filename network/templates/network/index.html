@@ -1,0 +1,87 @@
+{% extends "network/layout.html" %}
+
+{% block body %}
+<h3 id="allpost-h3">All Post</h3>
+<div id="newpost-view" class="border p-3">
+  <h5 id="newpost-h5">New Post</h5>
+  <form id="postings-form">
+    {% csrf_token %}
+    <textarea class="form-control" id="postings-body" data-textarea="0" placeholder="Type post here." name="post_text"></textarea>
+    <input id="posting-button" value="Post" type="submit" class="btn btn-sm btn-primary" />
+  </form>
+
+</div>
+
+<div id="postings-view">
+  <div class="container-fluid py-2 col-md-11">
+    <h4>{{ heading }}</h4>
+    <span id='temp_span'></span>
+    <h6>There are {{ count }} postings in total.</h6>
+    <div class="p-1 border" id="postings_list">
+          {% for post in postlist %}
+          <div class="p-2 border">
+            <span>{{post.posting_user}} posted on {{ post.post_ts }}</span>
+            <button id="edit-{{ post.id }}" data-editbutton="{{ post.id }}" class="btn btn-sm btn-primary float-end" onclick="edit_post('{{ post.id }}')">Edit</button>
+            <button id="post-{{ post.id }}" data-postbutton="{{ post.id }}" disabled class="btn btn-sm btn-primary float-end me-1" onclick="update_post('{{ post.id }}')">Post</button>
+            <form id="postings-form-{{ post.id }}">
+              {% csrf_token %}
+              <textarea class="form-control" disabled data-textarea="{{ post.id }}" id="postings-body-{{ post.id }}" name="post_text">{{ post.post_text }}</textarea>
+            </form>
+          </div>
+          {% empty %}
+            <p>There are no postings</p>
+          {% endfor %}
+    </div>
+  </div>
+
+  {% if postlist.has_other_pages %}
+  <div class="container-fluid py-2 col-md-11">
+    <div class="d-flex flex-row justify-content-between align-items-start flex-wrap p-2 bd-highlight">
+      <form action="{% url 'view_all_post' %}" method="get">
+        <label for="select_page">Select Page to go to: </label>
+        <select class="form-select form-control-sm bg-light" id="select_page" aria-label="form-select-md example" name="page">
+            <option disabled>Select</option>
+            {% for i in postlist.paginator.page_range %}
+              {% if postlist.number == i %}
+                <option selected value="{{ i }}">{{ i }}</option>
+              {% else %}
+                <option value="{{ i }}">{{ i }}</option>
+              {% endif %}
+            {% endfor %}
+        </select >
+        <button type="submit" id="select_page_button" class="btn btn-primary btn-sm">Select</button>
+      </form>
+
+      <div>
+        <ul class="pagination pagination-sm">
+          {% if postlist.has_previous %}
+            <li class="page-item"><a  class="page-link" href="?page={{ postlist.previous_page_number }}">&laquo;</a></li>
+          {% else %}
+            <li class="page-item disabled"><a  class="page-link" href="?page={{ 1 }}">&laquo;</a></li>
+          {% endif %}
+          {% for i in postlist.paginator.page_range %}
+            {% if postlist.number == i %}
+              <li  class="page-item active"><a  class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+            {% endif %}
+          {% endfor %}
+          {% if postlist.has_next %}
+            <li class="page-item"><a  class="page-link" href="?page={{ postlist.next_page_number }}">&raquo;</a></li>
+          {% else %}
+            <li class="page-item disabled"><a  class="page-link" href="?page={{ postlist.num_pages }}">&raquo;</a></li>
+          {% endif %}
+          </ul>
+        </div>
+      </div>
+  </div>
+  {% endif %}
+</div>
+
+<div id="followings-view">
+  Followings View
+</div>
+
+<div id="profile-view">
+  Profile view.
+</div>
+
+{% endblock %}
