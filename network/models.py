@@ -16,12 +16,18 @@ class Postings(models.Model):
     supercede_ts = models.DateTimeField(blank=True, null=True, verbose_name="Supercede Timestamp")
     previous_post = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True, related_name="replaced_post", related_query_name="replaced_post", verbose_name='Suceeding Post')
 
+    def __str__(this):
+        return (f'Post ID: {this.id}')
+
 class Followings(models.Model):
     follower = models.ForeignKey(User, on_delete=models.CASCADE, related_name="follower", related_query_name="follower", verbose_name='Follower')
     follows = models.ForeignKey(User, on_delete=models.CASCADE, related_name="follows", related_query_name="follows", verbose_name='Follows')
     following_active = models.BooleanField(default=True, help_text="The following is active.",verbose_name='Following Active')
     follow_start = models.DateTimeField(auto_now_add=True, verbose_name="Following Start Timestamp")
     follow_end = models.DateTimeField(blank=True, null=True, verbose_name="Following End Timestamp")
+
+    def __str__(this):
+        return (f'{this.follower} follows {this.follows}')
 
 class Likes(models.Model):
     liker = models.ForeignKey(User, on_delete=models.CASCADE, related_name="liker", related_query_name="liker", verbose_name='Liker')
@@ -30,3 +36,9 @@ class Likes(models.Model):
     likes_active = models.BooleanField(default=True, help_text="This like is Active",verbose_name='Active Likes?')
     likes_starts_ts = models.DateTimeField(auto_now_add=True, verbose_name="Likes Timestamp")
     likes_ends_ts = models.DateTimeField(blank=True, null=True, verbose_name="Like End Timestamp")
+
+    def __str__(this):
+        if this.likes:
+            return (f'{this.liker} likes {this.post_id}')
+        else:
+            return (f'{this.liker} dislikes {this.post_id}')
