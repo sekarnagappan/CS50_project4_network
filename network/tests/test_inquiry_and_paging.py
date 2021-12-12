@@ -6,6 +6,10 @@ from network.models import User, Postings, Followings, Likes
 import json
 
 class InquiryPagingTestCase(TestCase):
+    """
+    Test All Posting Inquiry on the mail index page. 
+    We are testing only yhe inquiry and paging here, not the posting.
+    """
     
     client = Client()
     tester = "sekar"
@@ -127,7 +131,7 @@ class InquiryPagingTestCase(TestCase):
             p.append(posting.id)
             
         logged_in = self.client.login(username=self.tester, password=self.tester_password) 
-        self.assertTrue(logged_in)       
+        self.assertTrue(logged_in, "Check if login successful.")       
         
     def test_get_index_and_paging_count(self):
         """
@@ -135,36 +139,37 @@ class InquiryPagingTestCase(TestCase):
         """
 
         response = self.client.get(reverse('index'))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['count'], self.post_setup_count)
-        self.assertEqual(response.context['postlist'].number, 1)
-        self.assertEqual(response.context['postlist'].paginator.num_pages, 3)
-        self.assertEqual(response.context['postlist'].paginator.per_page, 10)
+        self.assertEqual(response.status_code, 200, "Check response code is 200.")
+        self.assertEqual(response.context['count'], self.post_setup_count, "Check total number of postings expected")
+        self.assertEqual(response.context['postlist'].number, 1, "Check current page number")
+        self.assertEqual(response.context['postlist'].paginator.num_pages, 3, "Check total page number")
+        self.assertEqual(response.context['postlist'].paginator.per_page, 10,"Check max number of items on a page")
         for i in range (0, len(response.context['postlist'])-1):
-            self.assertTrue(response.context['postlist'][i].post_ts >= response.context['postlist'][i+1].post_ts)
-        last_post_ts = response.context['postlist'][0].post_ts
+            self.assertTrue(response.context['postlist'][i].post_ts >= response.context['postlist'][i+1].post_ts, "Check Sort Order")
+        last_post_ts = response.context['postlist'][-1].post_ts
         
         response = self.client.get(reverse('index') + '?page=2')
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['count'], self.post_setup_count)
-        self.assertEqual(response.context['postlist'].number, 2)
-        self.assertEqual(response.context['postlist'].paginator.num_pages, 3)
-        self.assertEqual(response.context['postlist'].paginator.per_page, 10)
-        self.assertTrue(last_post_ts >= response.context['postlist'][0].post_ts)
+        self.assertEqual(response.status_code, 200,"Check response code is 200.")
+        self.assertEqual(response.context['count'], self.post_setup_count, "Check total number of postings expected")
+        self.assertEqual(response.context['postlist'].number, 2, "Check current page number")
+        self.assertEqual(response.context['postlist'].paginator.num_pages, 3, "Check total page number")
+        self.assertEqual(response.context['postlist'].paginator.per_page, 10, "Check max number of items on a page")
+        self.assertTrue(last_post_ts >= response.context['postlist'][0].post_ts, "Check Sort Order")
         for i in range (0, len(response.context['postlist'])-1):
-            self.assertTrue(response.context['postlist'][i].post_ts >= response.context['postlist'][i+1].post_ts)
-        
+            self.assertTrue(response.context['postlist'][i].post_ts >= response.context['postlist'][i+1].post_ts, "Check Sort Order")
+        last_post_ts = response.context['postlist'][-1].post_ts
+
         response = self.client.get(reverse('index') + '?page=3')
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['postlist'].number, 3)
-        self.assertEqual(len(response.context['postlist']), 1)
-        self.assertTrue(last_post_ts >= response.context['postlist'][0].post_ts)
+        self.assertEqual(response.status_code, 200,"Check response code is 200.")
+        self.assertEqual(response.context['postlist'].number, 3, "Check current page number")
+        self.assertEqual(len(response.context['postlist']), 1, "Check posting on the last page")
+        self.assertTrue(last_post_ts >= response.context['postlist'][0].post_ts, "Check Sort Order")
         for i in range (0, len(response.context['postlist'])-1):
-            self.assertTrue(response.context['postlist'][i].post_ts >= response.context['postlist'][i+1].post_ts)
+            self.assertTrue(response.context['postlist'][i].post_ts >= response.context['postlist'][i+1].post_ts, "Check Sort Order")
 
         response = self.client.get(reverse('index') + '?page=4444')
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['postlist'].number, 3)
+        self.assertEqual(response.status_code, 200,"Check response code is 200.")
+        self.assertEqual(response.context['postlist'].number, 3, "Check current page number")
         self.assertEqual(len(response.context['postlist']), 1)
 
 

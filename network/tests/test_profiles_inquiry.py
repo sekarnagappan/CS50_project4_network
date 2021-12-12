@@ -153,7 +153,8 @@ class ProfileInquiryTestCase(TestCase):
         self.assertEqual(response.context['postlist'].paginator.per_page, 10)
         for i in range (0, len(response.context['postlist'])-1):
             self.assertTrue(response.context['postlist'][i].post_ts >= response.context['postlist'][i+1].post_ts)
-            self.assertTrue(test_profile_user == response.context['postlist'][i].posting_user == response.context['postlist'][i+1].posting_user)
+            self.assertTrue(test_profile_user == response.context['postlist'][i].posting_user.username == response.context['postlist'][i+1].posting_user.username)
+
         self.assertEqual(response.context['profile_usr'], test_profile_user)
         self.assertEqual(response.context['followings'], 0)
         self.assertEqual(response.context['follows'], 0)
@@ -166,7 +167,7 @@ class ProfileInquiryTestCase(TestCase):
         self.assertEqual(response.context['postlist'].paginator.per_page, 10)
         for i in range (0, len(response.context['postlist'])-1):
             self.assertTrue(response.context['postlist'][i].post_ts >= response.context['postlist'][i+1].post_ts)
-            self.assertTrue(test_profile_user == response.context['postlist'][i].posting_user == response.context['postlist'][i+1].posting_user)
+            self.assertTrue(test_profile_user == response.context['postlist'][i].posting_user.username == response.context['postlist'][i+1].posting_user.username)
     
         # Request for a page greater then 2, and ensure the last page is returned.   
         response = self.client.get(reverse('view_profile') + '?profile_id='+ test_profile_user + '&page=444')

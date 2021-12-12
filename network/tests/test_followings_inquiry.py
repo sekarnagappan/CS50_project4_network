@@ -5,8 +5,11 @@ from django.urls import reverse
 from network.models import User, Postings, Followings, Likes
 import json
 
-class InquiryPagingTestCase(TestCase):
-    
+class FollowingsInquiryTestCase(TestCase):
+    """
+    This test case setups up a user to follow 3 other users, and checks 
+    the followings page displays all the post of the users followed.
+    """
     client = Client()
     tester = "sekar"
     tester_password = "password"
@@ -129,14 +132,47 @@ class InquiryPagingTestCase(TestCase):
         logged_in = self.client.login(username=self.tester, password=self.tester_password) 
         self.assertTrue(logged_in)       
                 
-    def test_followings_count(self, count=0):
+    def test_followings_count(self):
         """
-        Check if a given number of post exist in the response.
+        Test followings. For a user check if all the post for people one follows are retrieved.
         """
+        self.assertEqual(User.objects.get(username=self.tester).followings_count, 0, "Check followings count")
+
+        # Setup a user to follow 3 other users. 
+               
+        self.assertEqual(User.objects.get(username='john').followers_count, 0, "Check followers count")
+        response = self.client.post(reverse('follows'), 
+                                    json.dumps({ 'profile_id': 'john', 'follow': True}),
+                                    content_type="application/json"
+                                    )
+        self.assertEqual(response.status_code, 201, "Check followings registered successfully")
+        self.assertEqual(User.objects.get(username='john').followers_count, 1, "Check followers count")
         
+        response = self.client.post(reverse('follows'), 
+                                    json.dumps({ 'profile_id': 'ann', 'follow': True}),
+                                    content_type="application/json"
+                                    )
+        self.assertEqual(response.status_code, 201, "Check followings registered successfully")
+        
+        response = self.client.post(reverse('follows'), 
+                                    json.dumps({ 'profile_id': 'tim', 'follow': True}),
+                                    content_type="application/json"
+                                    )
+        self.assertEqual(response.status_code, 201, "Check followings registered successfully")
+        
+        self.assertEqual(User.objects.get(username=self.tester).followings_count, 3, "Check followings count")
+        
+        #Retrieve the post of ones followings and check response.
         response = self.client.get(reverse('followings'))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['count'], count)
-
+        self.assertEqual(response.context['count'], 12, "Check followings post count")
+        self.assertEqual(response.context['postlist'].number, 1, "Check if you are page 1")
+        self.assertEqual(response.context['postlist'].paginator.num_pages, 2, "Check if there ate 2 pages")
+        self.assertEqual(response.context['postlist'].paginator.per_page, 10, "Check if there are 10 per page")
+        for i in range (0, len(response.context['postlist'])-1):
+            self.assertTrue(response.context['postlist'][i].post_ts >= response.context['postlist'][i+1].post_ts, "Check sort order")
+            self.assertIn(response.context['postlist'][i].posting_user.username, ['john', 'ann', 'tim'], "Check the post are for your followings")
+        self.assertIn(response.context['postlist'][-1].posting_user.username, ['john', 'ann', 'tim'], "Check the post are for your followings")
+        last_post_ts = response.context['postlist'][-1].post_ts
 
     

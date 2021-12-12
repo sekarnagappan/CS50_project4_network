@@ -21,7 +21,8 @@ logger = logging.getLogger(__name__)
 
 
 def index(request):
-    # Only display index page if user is logged in.
+    # The default entry point.
+    # Display index page with all postings if user is logged in, else displays the login page.
 
     context = {}
     if request.user.is_authenticated:
@@ -30,17 +31,16 @@ def index(request):
     else:
         return HttpResponseRedirect(reverse("login"))
 
-
-# Add a new posting to the DB, or update an existing posting if the post_id is
-# present in the request.
 @login_required
 def make_posting(request):
+    # Add a new posting to the DB, or update an existing posting if the post_id is
+    # present in the request.
 
     # A make_posting request must be via POST
     if request.method != "POST":
         return JsonResponse({"error": "POST request required."}, status=400)
 
-    # Check recipient e-mails
+    # If there is a posting_id in the request, this is an edit request.
     data = json.loads(request.body)
     text = data.get('text', "")
     post_id = data.get('post_id', "")
@@ -48,16 +48,22 @@ def make_posting(request):
     if text == "":
         return JsonResponse({
             "error": "Your post is empty."
-        }, status=400)
+        }, status=405)
 
     user = get_object_or_404(User, username=request.user)
 
+    # If this in an edit request, get the record being edited, and mark it as superceded.
+    # It also ensures a user can only edit his own post.
     if (post_id):
         original_post = get_object_or_404(Postings, pk=post_id)
+        if (user.id != original_post.posting_user.id):
+            return JsonResponse({
+            "error": "You cannot edit this post."
+            }, status=403)
         original_post.post_superceded = True
         original_post.supercede_ts = timezone.now()
-        print(f"Update Post ID: {original_post.id}")
 
+    # Create a new posting record. If this is an edit, set the previous_post filed to the record being edited.
     posting = Postings(
                         posting_user=user,
                         post_text=text,
@@ -71,35 +77,51 @@ def make_posting(request):
             posting.save()
             if (post_id):
                 original_post.save()
-                print(f"Posted Update. {original_post.id}")
+                #print(f"Posted Update. {original_post.id}")
     except IntegrityError:
-        messages.error(request, "Sorry, I am not able to update the post, a technical error has occured.")
+        messages.error(request, "Sorry, I am not able to update the post, a technical error has occurred.")
 
-    return JsonResponse({"message": "Posting Done."}, status=201)
+    return JsonResponse({"message": "Posting Done.", "posting_pk": f"{posting.id}"}, status=201)
 
+@login_required
+def view_all_post(request):
+    # This function is called to view all posting. It calls the view_posting function with the parameter "All"
+    context = {}
+    request, context = view_postings(request, context, "All")
+
+    return render(request, "network/index.html", context)
 
 @login_required
 def view_profile(request):
+    # This function is called to view postings for a user on the profile page. 
+    # It calls the view_posting function with the parameter "Profile"
+
     profile_id = request.GET.get('profile_id', '')
+    page = request.GET.get('page', '')
     if (profile_id != ''):
         context = {}
         request, context = view_postings(request, context, "Profile", profile_id)
 
     return render(request, "network/index.html", context)
 
-
 @login_required
-def view_all_post(request):
+def followings(request):
+    # This function is called to view postings of users this user is following on the profile page. 
+    # It calls the view_posting function with the parameter "Followings"
+
     context = {}
-    request, context = view_postings(request, context, "All")
+    request, context = view_postings(request, context, "Followings")
 
     return render(request, "network/index.html", context)
 
-
 @login_required
 def view_postings(request, context, filter="All", profile_id=""):
-    # This functions retrieves a list of post for a user and displays 10 post
-    # per page, using a paginator.
+    # This functions retrieves a list of posting depending on the filter parameter passed. 
+    # If filter is set to "All", all active posting records are passed. 
+    # If filter is "Profile", a profile_id must be provided. And the function will return all active records for the profile id.
+    # If filter is "Followings" all active posting records for all users this user follows if return. 
+    # In addition to the postings records, the function will retrieve if the user has a like or dislike for the post.
+    # It will use a paginator to return 10 post per request.
 
     heading = ""
     profile_follows = 0
@@ -128,7 +150,7 @@ def view_postings(request, context, filter="All", profile_id=""):
                                         ' ORDER BY post_ts DESC', [usr.id, profile_usr.id])
         elif (filter == "Followings"):
             heading = "Postings You Follow"
-            list = Postings.objects.filter(posting_user__in=Followings.objects.filter(following_active=True).filter(follower=usr).values_list('follows')).filter(post_superceded=False)
+            list = Postings.objects.filter(posting_user__in=Followings.objects.filter(following_active=True).filter(follower=usr).values_list('follows')).filter(post_superceded=False).order_by('-post_ts')
 
         else:
             heading = "All Posts"
@@ -161,7 +183,8 @@ def view_postings(request, context, filter="All", profile_id=""):
                         'sections' : filter,
                         'start_index': paginator.page(postlist.number).start_index(),
                         'end_index': paginator.page(postlist.number).end_index(),
-                    }
+                        'querystr_prefix': f"profile_id={ profile_id }&" if profile_id else ""
+                    } 
         return (request, context)
 
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
@@ -169,6 +192,8 @@ def view_postings(request, context, filter="All", profile_id=""):
 
 @login_required
 def thumbs_click(request):
+    # This function records likes and dislikes, based on the request.
+    # The request must provide the post_id to updated, and weather to record a like, a dislike, or remove a like or dislike.
     if request.method != "POST":
         return JsonResponse({"error": "POST request required."}, status=400)
 
@@ -182,8 +207,15 @@ def thumbs_click(request):
     likes = post.liked_post.filter(likes_active=True).filter(liker=user).first()
 
     if (thumbs_up is None and likes is None):
-        print("Messages should not be here, most like so db record corruption")
-        return JsonResponse({"message": "Shouldn't be here, nothing to register"}, status=201)
+        #print("Messages should not be here, most like so db record corruption")
+        return JsonResponse({"error": "Shouldn't be here, nothing to register"}, status=428)
+
+    if (thumbs_up == True and likes is not None and likes.likes == True):
+        return JsonResponse({'error': "You already liked this post!"}, status=428)
+    
+    if (thumbs_up == False and likes is not None and likes.likes == False):
+        return JsonResponse({'error': "You already disliked this post!"}, status=428)
+
 
     if (thumbs_up is None):
         if (likes.likes == True):
@@ -198,9 +230,9 @@ def thumbs_click(request):
                 post.save()
                 likes.save()
         except IntegrityError:
-            messages.error(request, "Sorry, I am not able to update the likes, a technical error has occured.")
+            messages.error(request, "Sorry, I am not able to update the likes, a technical error has occurred.")
 
-        print("Exiting thumbs up - True")
+        #print("Exiting thumbs up - True")
         return JsonResponse({"message": "Likes Cleared.",
                             'likes_count': post.likes_count,
                             'dislikes_count': post.dislikes_count }, status=201)
@@ -226,7 +258,7 @@ def thumbs_click(request):
         except IntegrityError:
             messages.error(request, "Sorry, I am not able to update the likes, a technical error has occured.")
 
-        print("Exiting thumbs up - True")
+        #print("Exiting thumbs up - True")
         return JsonResponse({"message": "Likes Registered.",
                             'likes_count': post.likes_count,
                             'dislikes_count': post.dislikes_count }, status=201)
@@ -252,7 +284,7 @@ def thumbs_click(request):
         except IntegrityError:
             messages.error(request, "Sorry, I am not able to update the likes, a technical error has occured.")
 
-        print("Exiting thumbs up - False")
+        #print("Exiting thumbs up - False")
         return JsonResponse({"message": "Dislike Registered.",
                             'likes_count': post.likes_count,
                             'dislikes_count': post.dislikes_count }, status=201)
@@ -263,18 +295,19 @@ def thumbs_click(request):
 @login_required
 def follows(request):
 
-    breakpoint()
-    
     if request.method != "POST":
         return JsonResponse({"error": "POST request required."}, status=400)
 
     # Check recipient emails
     data = json.loads(request.body)
-    profile_id = data.get('profile_id', "")  # True = Likes post, False = Dislikes Post, None = Netural.
+    profile_id = data.get('profile_id', "")
     follows = data.get('follow', "")
 
     user = get_object_or_404(User, username=request.user)
     profile_user = get_object_or_404(User, username=profile_id)
+
+    if (user.id == profile_user.id):
+        return JsonResponse({"error": "You cannot follow yourself."}, status=400)
 
     try:
         following = Followings.objects.filter(follower=user).filter(follows=profile_user).filter(following_active=True)
@@ -341,16 +374,6 @@ def follows(request):
     return JsonResponse({"message": "Follow - something wrong, should not reach here!"}, status=400)
 
 
-@login_required
-def followings(request):
-
-    context = {}
-    request, context = view_postings(request, context, "Followings")
-
-    return render(request, "network/index.html", context)
-
-
-
 def login_view(request):
     if request.method == "POST":
 
@@ -362,7 +385,7 @@ def login_view(request):
         # Check if authentication successful
         if user is not None:
             login(request, user)
-            print(f'User logged in: {username}')
+            #print(f'User logged in: {username}')
             return HttpResponseRedirect(reverse("index"))
         else:
             return render(request, "network/login.html", {

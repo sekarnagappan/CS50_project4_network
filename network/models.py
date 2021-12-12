@@ -1,11 +1,14 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-
+# Added 2 fields to the User Model to keep track of followers and following count.
 class User(AbstractUser):
     followers_count   = models.PositiveIntegerField(default=0, help_text="Number of Followers", verbose_name="Followers Count")
     followings_count = models.PositiveIntegerField(default=0, help_text="Number of people you follow", verbose_name="Followerings Count")
 
+# The posting record will, besides keeping track of the user making the posting and the postings text, it will also keep track of likes and dislikes counts.
+# The posting table will also keep history of edit postings. When a posting record is edited, the record is marked as superceded,
+# and a new record created. The new record will have alike to the previous.
 class Postings(models.Model):
     posting_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="poster", related_query_name="poster", verbose_name='Poster')
     post_text = models.TextField(help_text="Posting Text", verbose_name="Post Text")
@@ -16,9 +19,13 @@ class Postings(models.Model):
     supercede_ts = models.DateTimeField(blank=True, null=True, verbose_name="Supercede Timestamp")
     previous_post = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True, related_name="replaced_post", related_query_name="replaced_post", verbose_name='Suceeding Post')
 
+    class Meta:
+        ordering = ['id']
+        
     def __str__(this):
         return (f'Post ID: {this.id}')
 
+# Followings model keeps track who is following whom. It also has the history of previous following.
 class Followings(models.Model):
     follower = models.ForeignKey(User, on_delete=models.CASCADE, related_name="follower", related_query_name="follower", verbose_name='Follower')
     follows = models.ForeignKey(User, on_delete=models.CASCADE, related_name="follows", related_query_name="follows", verbose_name='Follows')
@@ -29,6 +36,7 @@ class Followings(models.Model):
     def __str__(this):
         return (f'{this.follower} follows {this.follows}')
 
+# Like model keep tract of the likes and dislikes. It also has a history of previous like and dislikes.
 class Likes(models.Model):
     liker = models.ForeignKey(User, on_delete=models.CASCADE, related_name="liker", related_query_name="liker", verbose_name='Liker')
     post_id = models.ForeignKey(Postings, on_delete=models.CASCADE, related_name="liked_post", related_query_name="liked_post", verbose_name='Liked Post')

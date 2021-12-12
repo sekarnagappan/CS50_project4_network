@@ -3,10 +3,12 @@ from django.utils import timezone
 from django.urls import reverse
 
 from network.models import User, Postings, Followings, Likes
-import json
+import json, logging
 
 class FollowsTestCase(TestCase):
-    
+    """
+    Testcase to test the follow and unfollow actions.
+    """
     
     client = Client()
     tester = "sekar"
@@ -129,21 +131,26 @@ class FollowsTestCase(TestCase):
             p.append(posting.id)
             
         logged_in = self.client.login(username=self.tester, password=self.tester_password) 
-        self.assertTrue(logged_in)       
+        self.assertTrue(logged_in)    
+        
+        """Reduce the log level to avoid expected errors like 'not found'"""
+        logger = logging.getLogger("django.request")
+        logger.setLevel(logging.ERROR)
         
     def test_view_profile(self):
         """
         Check Profiles page for a user.
         """
         test_profile_user = 'john'
-        # Load index page
-        response = self.client.get(reverse('index'))
-        self.assertEqual(response.status_code, 200)
         
+        self.assertEqual(User.objects.get(username=self.tester).followings_count, 0, "Check followings count")
+
         # Load profile view for john and assert positive response.
+        self.assertEqual(User.objects.get(username=test_profile_user).followers_count, 0, "Check followers count")
         response = self.client.get(reverse('view_profile') + '?profile_id=' + test_profile_user)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200, "Check retrieval of profile page for one user")
         
+        # Test to see if  logged in user can follow another.
         response = self.client.post(reverse('follows'), 
                                     json.dumps({ 'profile_id': test_profile_user, 'follow': True}),
                                     content_type="application/json"
@@ -155,6 +162,8 @@ class FollowsTestCase(TestCase):
         self.assertEqual(content['followers_count'], 1)
         self.assertEqual(content['user_follows'], 1)
         
+        # Test to see if a user tries to follow a use who is already following.
+        # This request should have been stopped at the front end, so this is back end check, just in case.
         response = self.client.post(reverse('follows'), 
                                     json.dumps({ 'profile_id': test_profile_user, 'follow': True}),
                                     content_type="application/json"
@@ -162,7 +171,11 @@ class FollowsTestCase(TestCase):
         self.assertEqual(response.status_code, 201)
         content = json.loads(response.content)
         self.assertEqual(content['message'], 'Following Anyway, nothing done!')
+        self.assertEqual(User.objects.get(username=test_profile_user).followers_count, 1, "Check followers count")        
+        self.assertEqual(User.objects.get(username=self.tester).followings_count, 1, "Check followings count")
                            
+
+        #log in as another user and try to follow john. To check following counts are done correctly.
         logged_in = self.client.login(username='ann', password=self.tester_password) 
         self.assertTrue(logged_in) 
         
@@ -179,6 +192,8 @@ class FollowsTestCase(TestCase):
         self.assertEqual(content['followers_count'], 2)
         self.assertEqual(content['user_follows'], 1)
         
+        # Test unfollow.
+        self.assertEqual(User.objects.get(username='ann').followings_count, 1, "Check followers count")
         response = self.client.post(reverse('follows'), 
                                     json.dumps({ 'profile_id': test_profile_user, 'follow': False}),
                                     content_type="application/json"
@@ -189,11 +204,30 @@ class FollowsTestCase(TestCase):
         self.assertEqual(content['followings_count'], 0)
         self.assertEqual(content['followers_count'], 1)
         self.assertEqual(content['user_follows'], 0)
+        self.assertEqual(User.objects.get(username='ann').followings_count, 0, "Check followers count")
+        self.assertEqual(User.objects.get(username=test_profile_user).followers_count, 1, "Check followings count")
+
         
+        # Test unfollow when not following.
+        # This request should have been stopped at the front end, this is back end check, just in case.
         response = self.client.post(reverse('follows'), 
                                     json.dumps({ 'profile_id': test_profile_user, 'follow': False}),
                                     content_type="application/json"
                                     )
         self.assertEqual(response.status_code, 201)
         content = json.loads(response.content)
-        self.assertEqual(content['message'], 'Not Following Anyway, nothing done!')         
+        self.assertEqual(content['message'], 'Not Following Anyway, nothing done!')     
+        
+        # Test to check if a user can follow himself.
+        response = self.client.post(reverse('follows'), 
+                                    json.dumps({ 'profile_id': 'ann', 'follow': True}),
+                                    content_type="application/json"
+                                    )
+        self.assertEqual(response.status_code, 400)
+        content = json.loads(response.content)
+        self.assertEqual(content['error'], 'You cannot follow yourself.')     
+        
+        
+        
+        
+            

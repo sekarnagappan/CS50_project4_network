@@ -19,7 +19,24 @@ document.addEventListener('DOMContentLoaded', function() {
       document.querySelector('#postings-view').style.display = 'block';
 
   } else {
-      load_index();
+	  // Show the mailbox and hide other views
+	  document.querySelector('#newpost-view').style.display = 'block';
+	  document.querySelector('#profile-view').style.display = 'none';
+	  document.querySelector('#followings-view').style.display = 'none';
+	  document.querySelector('#postings-view').style.display = 'block';
+	
+	  let posting_body = document.querySelector('#postings-body')
+	  posting_body.value = "";
+	
+	  document.querySelector('#postings-form').onsubmit = () => {
+	    if (posting_body.value !== "") {
+	      make_posting('/make_posting', posting_body.value);
+	      return false;
+	    } else {
+	      alert("No Post made: You posting text is empty!")
+	      return false;
+	    }
+	  };
   }
 
   document.querySelectorAll('.bi-hand-thumbs-up').forEach(t => {
@@ -43,31 +60,6 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-function load_index() {
-
-  // Show the mailbox and hide other views
-  document.querySelector('#newpost-view').style.display = 'block';
-  document.querySelector('#profile-view').style.display = 'none';
-  document.querySelector('#followings-view').style.display = 'none';
-  document.querySelector('#postings-view').style.display = 'block';
-
-  let posting_body = document.querySelector('#postings-body')
-  posting_body.value = "";
-
-  document.querySelector('#postings-form').onsubmit = () => {
-    if (posting_body.value !== "") {
-      make_posting('/make_posting', posting_body.value);
-      return false;
-    } else {
-      alert("No Post made: You posting text is empty!")
-      return false;
-    }
-  };
-}
-
-function load_profiles(url) {
-  window.location.href = url;
-}
 
 function make_posting(url, text, post_id = null) {
 
@@ -165,7 +157,7 @@ function thumbs_up(post_id) {
 
   if (user === posting_user) {
     // alert("You cannot like your own post!");
-    return true;
+    return false;
   }
   let thumbs_up_button = document.getElementById('thumbs-up-' + post_id);
   let thumbs_down_button = document.getElementById('thumbs-down-' + post_id);
@@ -184,7 +176,7 @@ function thumbs_up(post_id) {
     thumbs_up_button.style.color = 'black';
     thumbs_up_button.dataset.likes = 'off';
   }
-  return false;
+  return true;
 }
 
 function thumbs_down(post_id) {
@@ -194,7 +186,7 @@ function thumbs_down(post_id) {
 
   if (user === posting_user) {
     // alert("You cannot unlike your own post!");
-    return true;
+    return false;
   }
 
   let thumbs_up_button = document.getElementById('thumbs-up-' + post_id);
@@ -323,3 +315,4 @@ function follow(follow) {
 
   return fetchStatus
 }
+
