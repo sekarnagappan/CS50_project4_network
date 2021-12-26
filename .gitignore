@@ -28,6 +28,7 @@
 *.sql
 *.sqlite3
 db.sqlite3
+db.sqbpro
 
 # OS generated files #
 ######################

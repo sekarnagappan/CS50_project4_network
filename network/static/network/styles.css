@@ -1,23 +1,23 @@
-@media screen and (max-width: 600px) {
+@media screen and (max-width: 400px) {
   div.imgwidth {
     width: 100%;
   }
 }
 
-@media screen and (min-width: 601px) {
+@media screen and (min-width: 401px) {
   div.imgwidth {
     width: 30%;
   }
 }
 
-@media screen and (max-width: 600px) {
+@media screen and (max-width: 400px) {
   div.textwidth {
     width: 100%;
   }
 }
 
-@media screen and (min-width: 601px) {
+@media screen and (min-width: 401px) {
   div.textwidth {
-    width: 70%;
+    width: 60%;
   }
 }

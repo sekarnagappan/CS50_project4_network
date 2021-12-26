@@ -1,6 +1,10 @@
 'use strict';
 
 document.addEventListener('DOMContentLoaded', function() {
+  load_index()
+});
+
+function load_index() {
 
   let sections = document.querySelector("#sections");
 
@@ -19,25 +23,25 @@ document.addEventListener('DOMContentLoaded', function() {
       document.querySelector('#postings-view').style.display = 'block';
 
   } else {
-	  // Show the mailbox and hide other views
-	  document.querySelector('#newpost-view').style.display = 'block';
-	  document.querySelector('#profile-view').style.display = 'none';
-	  document.querySelector('#followings-view').style.display = 'none';
-	  document.querySelector('#postings-view').style.display = 'block';
-	
-	  let posting_body = document.querySelector('#postings-body')
-	  posting_body.value = "";
-	
-	  document.querySelector('#postings-form').onsubmit = () => {
-	    if (posting_body.value !== "") {
-	      make_posting('/make_posting', posting_body.value);
-	      return false;
-	    } else {
-	      alert("No Post made: You posting text is empty!")
-	      return false;
-	    }
-	  };
-  }
+    // Show the mailbox and hide other views
+    document.querySelector('#newpost-view').style.display = 'block';
+    document.querySelector('#profile-view').style.display = 'none';
+    document.querySelector('#followings-view').style.display = 'none';
+    document.querySelector('#postings-view').style.display = 'block';
+
+    let posting_body = document.querySelector('#postings-body')
+    posting_body.value = "";
+
+    document.querySelector('#postings-form').onsubmit = () => {
+      if (posting_body.value !== "") {
+        make_posting('/make_posting', posting_body.value);
+          return false;
+        } else {
+          alert("No Post made: Your posting text is empty!")
+          return false;
+        }
+      };
+    }
 
   document.querySelectorAll('.bi-hand-thumbs-up').forEach(t => {
     if (t.dataset.svg == "True") {
@@ -58,8 +62,8 @@ document.addEventListener('DOMContentLoaded', function() {
       t.dataset.likes = 'off';
     }
   });
-});
 
+}
 
 function make_posting(url, text, post_id = null) {
 
@@ -79,18 +83,23 @@ function make_posting(url, text, post_id = null) {
       if (response.status === 201) {
         response.json()
           .then(result => {
-            console.log(`Response Message: ${result.message}`)
-            alert(`Response Message: ${result.message}`);
-            load_index();
+            console.log(`Response Message: ${result.message} ID: ${result.posting_pk}`)
+            alert(`Response Message: ${result.message} ID: ${result.posting_pk}`);
+            //load_index();
             let select_page = document.querySelector('#select_page');
-            let select_page_button = document.querySelector('#select_page_button');
+            if ( select_page == null ){
+              window.location.reload()
+            } else {
+              let select_page_button = document.querySelector('#select_page_button');
 
-            select_page.addEventListener("change", (e) => {
+              select_page.addEventListener("change", (e) => {
               select_page_button.click();
-            });
+              });
 
-            select_page.value = 1;
-            select_page.dispatchEvent(new Event('change'));
+              select_page.value = 1;
+              select_page.dispatchEvent(new Event('change'));
+          }
+
 
             return Promise.resolve(true);
           });
@@ -119,7 +128,7 @@ function edit_post(post_id) {
         }
       }
       textarea.disabled = true;
-      const posting_user = (document.getElementById('post_user-' + foreach_id).textContent);
+      const posting_user = (document.getElementById('post-user-' + foreach_id).textContent);
       if (posting_user === user) {
         document.querySelector('#edit-' + foreach_id).style.display = 'block';
       } else {
@@ -153,7 +162,7 @@ function update_post(post_id) {
 function thumbs_up(post_id) {
 
   const user = JSON.parse(document.getElementById('request_username').textContent);
-  const posting_user = (document.getElementById('post_user-' + post_id).textContent);
+  const posting_user = (document.getElementById('post-user-' + post_id).textContent);
 
   if (user === posting_user) {
     // alert("You cannot like your own post!");
@@ -182,7 +191,7 @@ function thumbs_up(post_id) {
 function thumbs_down(post_id) {
 
   const user = JSON.parse(document.getElementById('request_username').textContent);
-  const posting_user = (document.getElementById('post_user-' + post_id).textContent);
+  const posting_user = (document.getElementById('post-user-' + post_id).textContent);
 
   if (user === posting_user) {
     // alert("You cannot unlike your own post!");
@@ -287,18 +296,18 @@ function follow(follow) {
         response.json()
           .then(result => {
             console.log(`Response Message: ${result.message}`)
-            alert(`Response Message follower Count: ${result.followings_count}, ${result.followers_count}`);
+            //alert(`Response Message follower Count: ${result.followings_count}, ${result.followers_count}`);
 
             document.getElementById("followings-count").textContent = result.followings_count;
             document.getElementById("followers-count").textContent = result.followers_count;
 
 			if (result.user_follows == 0 ){
-				document.getElementById("follow_button").style.display = "block";
-				document.getElementById("unfollow_button").style.display = "none";
+				document.getElementById("follow-button").style.display = "block";
+				document.getElementById("unfollow-button").style.display = "none";
 
 			} else {
-				document.getElementById("follow_button").style.display = "none";
-				document.getElementById("unfollow_button").style.display = "block";
+				document.getElementById("follow-button").style.display = "none";
+				document.getElementById("unfollow-button").style.display = "block";
 			}
 
             return Promise.resolve(true);
@@ -315,4 +324,3 @@ function follow(follow) {
 
   return fetchStatus
 }
-
