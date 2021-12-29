@@ -1,5 +1,6 @@
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.alert import Alert
@@ -42,8 +43,12 @@ class BrowserFollowingsTestCase(StaticLiveServerTestCase):
         Setup 5 users
         """
 
-        self.browser = webdriver.Chrome()
+        chrome_options = Options()
+        chrome_options.add_argument('--headless')
+        self.browser = webdriver.Chrome(options=chrome_options)
+        self.browser.set_window_size(1496, 875)
         self.test_browser = self.browser.capabilities['browserName']
+        #print(f"window size: {self.browser.get_window_size()}")
 
         
         sekar = User.objects.create( username = self.tester, 
@@ -216,7 +221,7 @@ class BrowserFollowingsTestCase(StaticLiveServerTestCase):
         post_id = int(posting_blocks[0].get_attribute('data-postblock')) #Should be Jane's Post
         post_block = browser.find_element(By.ID, f"posting-block-{post_id}").location_once_scrolled_into_view
         
-        profile_user = browser.find_element(By.ID, f"post-user-{post_id}")
+        profile_user = posting_blocks[0].find_element(By.ID, f"post-user-{post_id}")
         
         profile_user.click() #Click on Jane's profile link and ensure the profile view is displayed.
         WebDriverWait(browser, 5).until(EC.presence_of_element_located((By.ID, "profile-view")))
@@ -242,8 +247,9 @@ class BrowserFollowingsTestCase(StaticLiveServerTestCase):
         post_block = browser.find_element(By.ID, f"posting-block-{post_id}").location_once_scrolled_into_view
 
         
-        profile_user = browser.find_element(By.ID, f"post-user-{post_id}")
-        
+        profile_user = posting_blocks[3].find_element(By.ID, f"post-user-{post_id}")
+        #WebDriverWait(browser, 10).until(EC.element_to_be_clickable((By.ID, "post-user-{post_id}")))
+
         profile_user.click() #Click on Tims's profile link and ensure the profile view is displayed.
         WebDriverWait(browser, 5).until(EC.presence_of_element_located((By.ID, "profile-view")))
         WebDriverWait(browser, 5).until(EC.presence_of_element_located((By.ID, "follow-button")))

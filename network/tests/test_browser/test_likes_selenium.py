@@ -1,5 +1,6 @@
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.alert import Alert
@@ -40,9 +41,13 @@ class BrowserLikesTestCase(StaticLiveServerTestCase):
         Setup 5 users
         """
 
-        self.browser = webdriver.Chrome()
+        chrome_options = Options()
+        chrome_options.add_argument('--headless')
+        self.browser = webdriver.Chrome(options=chrome_options)
+        self.browser.set_window_size(1496, 875)
         self.test_browser = self.browser.capabilities['browserName']
-        
+        #print(f"window size: {self.browser.get_window_size()}")
+       
         sekar = User.objects.create( username = self.tester, 
                                      is_superuser = False,
                                      is_staff = False,
