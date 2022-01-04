@@ -31,10 +31,16 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 #SECRET_KEY = '13kl@xtukpwe&xj2xoysxe9_6=tf@f8ewxer5n&ifnd46+6$%8'
-SECRET_KEY = env('SECRET_KEY')
+if os.environ.get('GITHUB_WORKFLOW'):
+    SECRET_KEY = '13kl@xtukpwe&xj2xoysxe9_6=tf@f8ewxer5n&ifnd46+6$%8'
+else:
+    SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env('DEBUG')
+if os.environ.get('GITHUB_WORKFLOW'):
+    DEBUG = True
+else:
+    DEBUG = env('DEBUG')
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
@@ -85,10 +91,6 @@ WSGI_APPLICATION = 'project4.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
-DATABASES = {
-    'default': env.db()
-}
-
 if os.environ.get('GITHUB_WORKFLOW'):
     DATABASES = {
         'default': {
@@ -99,6 +101,10 @@ if os.environ.get('GITHUB_WORKFLOW'):
             'HOST': 'localhost',
             'PORT': '5432',
         }
+    }
+else:
+    DATABASES = {
+        'default': env.db()
     }
 
 AUTH_USER_MODEL = "network.User"
