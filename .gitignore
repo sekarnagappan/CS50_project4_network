@@ -43,11 +43,11 @@ Thumbs.db
 #Django lecture files
 #####################
 __pycache__
-db.sqlite3
 
 #Other Files
 ############
 
+.env
 .project
 .pydevproject
 .settings
@@ -66,3 +66,5 @@ mynotes/
 !*.js
 !*.html
 !*.css
+!*.yml
+!*.yaml
