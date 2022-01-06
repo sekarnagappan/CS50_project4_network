@@ -125,7 +125,6 @@ class NetworkTestCase(TestCase):
         Test create an empty post and assert posting is rejected.
         """
         
-        postings = Postings.objects.get(pk=1)
         pre_count = Postings.objects.count()      
         post_text = ""  
         response = self.client.post(reverse('make_posting'), 
@@ -147,7 +146,7 @@ class NetworkTestCase(TestCase):
         # Get the 4 posting record. Should belong to the current user.
         # Change the text and post it.
         # Assert if correct response received.
-        edit_key = 4 
+        edit_key = self.post[3][2]
         pre_count = Postings.objects.count()
         posting = Postings.objects.get(pk=edit_key)      
         post_text = posting.post_text + " - " + "Edit Post 1"  
@@ -188,9 +187,9 @@ class NetworkTestCase(TestCase):
         """
         Test Edit some else's Post and ensure the request is rejected.
         """
-        
+        edit_key = self.post[1][2]
         pre_count = Postings.objects.count()
-        posting = Postings.objects.get(pk=2)      
+        posting = Postings.objects.get(pk=edit_key)      
         post_text = posting.post_text + " - " + "Edit Post 1"  
         response = self.client.post(reverse('make_posting'), 
                                     json.dumps({'text': post_text, 'post_id': posting.id}), 

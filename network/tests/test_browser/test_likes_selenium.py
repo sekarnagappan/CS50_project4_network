@@ -9,7 +9,7 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import ElementClickInterceptedException
 from django.utils import timezone
-import logging
+import logging, time
 
 from network.models import User, Postings, Followings, Likes
 
@@ -196,6 +196,30 @@ class BrowserLikesTestCase(StaticLiveServerTestCase):
                     post_id = int(post_msg.split(':')[2])
                     p.append(post_id)
                     
+    def thumbs_click(self, browser, up_down_ind, postings_block, increment):
+        
+        post_id = int(postings_block.get_attribute('data-postblock'))
+        post_block = browser.find_element(By.ID, f"posting-block-{post_id}").location_once_scrolled_into_view
+        thumbs = browser.find_element(By.ID, f"thumbs-{up_down_ind}-{post_id}")
+        if up_down_ind == "up":
+            count = int(browser.find_element(By.ID, f"likes-count-{post_id}").text)
+        else:
+            count = int(browser.find_element(By.ID, f"unlikes-count-{post_id}").text)
+
+        
+        likes_switch = thumbs.get_attribute('data-likes') 
+        self.assertEqual(likes_switch, "off", "Check likes is off for the first post")
+        self.assertEqual(thumbs.value_of_css_property('color'),'rgba(0, 0, 0, 1)', "Check if color is black")
+
+        thumbs.click() #Click thumbs up.
+        WebDriverWait(browser, 5).until(EC.text_to_be_present_in_element((By.ID, f"likes-count-{post_id}"), str(count+increment)))
+        
+      
+        likes_switch = thumbs.get_attribute('data-likes') 
+        self.assertEqual(likes_switch, "on", "Check likes is on for me")
+        self.assertEqual(int(browser.find_element(By.ID, f"likes-count-{post_id}").text), count + increment, "Check likes count increases by 1")
+        self.assertEqual(thumbs.value_of_css_property('color'),'rgba(255, 0, 0, 1)', "Check if color is red")       
+                    
     def test_likes(self):
         """
         Test Likes and dislikes.
@@ -204,7 +228,6 @@ class BrowserLikesTestCase(StaticLiveServerTestCase):
         self.postings()
                 
         browser = self.browser
-        #browser.implicitly_wait(10)
 
         self.logged_in_user = self.login(self.tester, self.tester_password)
 
@@ -223,6 +246,7 @@ class BrowserLikesTestCase(StaticLiveServerTestCase):
         # 3. Check likes count increased by and color is red.
         # 4. Click thumbs up again
         # 5. Ensure the likes in decreased by 1, and the color reverts to black.
+        
         post_id = int(posting_blocks[0].get_attribute('data-postblock'))
         post_block = browser.find_element(By.ID, f"posting-block-{post_id}").location_once_scrolled_into_view
         thumbs_up = browser.find_element(By.ID, f"thumbs-up-{post_id}")
@@ -233,14 +257,17 @@ class BrowserLikesTestCase(StaticLiveServerTestCase):
         self.assertEqual(thumbs_up.value_of_css_property('color'),'rgba(0, 0, 0, 1)', "Check if color is black")
 
         thumbs_up.click() #Click thumbs up.
+        WebDriverWait(browser, 5).until(EC.text_to_be_present_in_element((By.ID, f"likes-count-{post_id}"), str(likes_count+1)))
         
+      
         likes_switch = thumbs_up.get_attribute('data-likes') 
         self.assertEqual(likes_switch, "on", "Check likes is on for me")
         self.assertEqual(int(browser.find_element(By.ID, f"likes-count-{post_id}").text), likes_count + 1, "Check likes count increases by 1")
         self.assertEqual(thumbs_up.value_of_css_property('color'),'rgba(255, 0, 0, 1)', "Check if color is red")
         
         thumbs_up.click() # Click thumbs up again and the like should be removed.
-        
+        WebDriverWait(browser, 5).until(EC.text_to_be_present_in_element((By.ID, f"likes-count-{post_id}"), str(likes_count)))
+       
         likes_switch = thumbs_up.get_attribute('data-likes') 
         self.assertEqual(likes_switch, "off", "Check likes is on for me")
         self.assertEqual(int(browser.find_element(By.ID, f"likes-count-{post_id}").text), likes_count, "Check likes count decreases by 1")
@@ -250,24 +277,26 @@ class BrowserLikesTestCase(StaticLiveServerTestCase):
         post_id = int(posting_blocks[1].get_attribute('data-postblock'))
         post_block = browser.find_element(By.ID, f"posting-block-{post_id}").location_once_scrolled_into_view
         thumbs_down = browser.find_element(By.ID, f"thumbs-down-{post_id}")
-        likes_count = int(browser.find_element(By.ID, f"dislikes-count-{post_id}").text)
+        dislikes_count = int(browser.find_element(By.ID, f"dislikes-count-{post_id}").text)
   
         likes_switch = thumbs_down.get_attribute('data-likes') 
         self.assertEqual(likes_switch, "off", "Check likes are off")
         self.assertEqual(thumbs_down.value_of_css_property('color'),'rgba(0, 0, 0, 1)', "Check if color is black")
 
         thumbs_down.click() #Dislike
+        WebDriverWait(browser, 5).until(EC.text_to_be_present_in_element((By.ID, f"dislikes-count-{post_id}"), str(dislikes_count+1)))
         
         likes_switch = thumbs_down.get_attribute('data-likes') 
         self.assertEqual(likes_switch, "on", "Check likes is on for me")
-        self.assertEqual(int(browser.find_element(By.ID, f"dislikes-count-{post_id}").text), likes_count + 1, "Check likes count increases by 1")
+        self.assertEqual(int(browser.find_element(By.ID, f"dislikes-count-{post_id}").text), dislikes_count + 1, "Check likes count increases by 1")
         self.assertEqual(thumbs_down.value_of_css_property('color'),'rgba(255, 0, 0, 1)', "Check if color is red")
         
         thumbs_down.click() #Remove Dislike
+        WebDriverWait(browser, 5).until(EC.text_to_be_present_in_element((By.ID, f"dislikes-count-{post_id}"), str(dislikes_count)))
         
         likes_switch = thumbs_down.get_attribute('data-likes') 
         self.assertEqual(likes_switch, "off", "Check likes is on for me")
-        self.assertEqual(int(browser.find_element(By.ID, f"dislikes-count-{post_id}").text), likes_count, "Check likes count decreases by 1") 
+        self.assertEqual(int(browser.find_element(By.ID, f"dislikes-count-{post_id}").text), dislikes_count, "Check likes count decreases by 1") 
         self.assertEqual(thumbs_down.value_of_css_property('color'),'rgba(0, 0, 0, 1)', "Check if color is black")
         
         #Test a like, and then flip to dislike.
@@ -281,6 +310,7 @@ class BrowserLikesTestCase(StaticLiveServerTestCase):
         self.assertEqual(thumbs_up.value_of_css_property('color'),'rgba(0, 0, 0, 1)', "Check if color is black")
 
         thumbs_up.click() #Like
+        WebDriverWait(browser, 5).until(EC.text_to_be_present_in_element((By.ID, f"likes-count-{post_id}"), str(likes_count+1)))
         
         likes_switch = thumbs_up.get_attribute('data-likes') 
         self.assertEqual(likes_switch, "on", "Check likes is on for me")
@@ -296,15 +326,16 @@ class BrowserLikesTestCase(StaticLiveServerTestCase):
         self.assertEqual(thumbs_down.value_of_css_property('color'),'rgba(0, 0, 0, 1)', "Check if color is black")
 
         thumbs_down.click() # Click thumbs down, should switch a like to a dislike
+        WebDriverWait(browser, 5).until(EC.text_to_be_present_in_element((By.ID, f"dislikes-count-{post_id}"), str(dislikes_count+1)))
         
         likes_switch = thumbs_down.get_attribute('data-likes') 
         self.assertEqual(likes_switch, "on", "Check likes is on for me")
-        self.assertEqual(int(browser.find_element(By.ID, f"dislikes-count-{post_id}").text), dislikes_count + 1, "Check likes count decreases by 1")
+        self.assertEqual(int(browser.find_element(By.ID, f"dislikes-count-{post_id}").text), dislikes_count + 1, "Check likes count increases by 1")
         self.assertEqual(thumbs_down.value_of_css_property('color'),'rgba(255, 0, 0, 1)', "Check if color is red")
               
         likes_switch = thumbs_up.get_attribute('data-likes') 
         self.assertEqual(likes_switch, "off", "Check likes is on for me")
-        self.assertEqual(int(browser.find_element(By.ID, f"likes-count-{post_id}").text), likes_count, "Check likes count increases by 1")
+        self.assertEqual(int(browser.find_element(By.ID, f"likes-count-{post_id}").text), likes_count, "Check likes count decreases by 1")
         self.assertEqual(thumbs_up.value_of_css_property('color'),'rgba(0, 0, 0, 1)', "Check if color is black")
         
         
@@ -312,15 +343,19 @@ class BrowserLikesTestCase(StaticLiveServerTestCase):
         post_id = int(posting_blocks[0].get_attribute('data-postblock'))
         post_block = browser.find_element(By.ID, f"posting-block-{post_id}").location_once_scrolled_into_view
         thumbs_up = WebDriverWait(browser, 15).until(EC.element_to_be_clickable((By.ID, f"thumbs-up-{post_id}")))
+        likes_count = int(browser.find_element(By.ID, f"likes-count-{post_id}").text)
 
         thumbs_up.click()
-        
+        WebDriverWait(browser, 5).until(EC.text_to_be_present_in_element((By.ID, f"likes-count-{post_id}"), str(likes_count+1)))
+
         post_id = int(posting_blocks[1].get_attribute('data-postblock'))
         post_block = browser.find_element(By.ID, f"posting-block-{post_id}").location_once_scrolled_into_view
         thumbs_down = WebDriverWait(browser, 15).until(EC.element_to_be_clickable((By.ID, f"thumbs-down-{post_id}")))
+        dislikes_count = int(browser.find_element(By.ID, f"dislikes-count-{post_id}").text)
 
         thumbs_down.click()
-                
+        WebDriverWait(browser, 5).until(EC.text_to_be_present_in_element((By.ID, f"dislikes-count-{post_id}"), str(dislikes_count+1)))
+
         self.logout()
         self.logged_in_user = self.login('john', self.tester_password)
  
@@ -339,6 +374,7 @@ class BrowserLikesTestCase(StaticLiveServerTestCase):
         likes_count = int(browser.find_element(By.ID, f"likes-count-{post_id}").text)
  
         thumbs_up.click()
+        WebDriverWait(browser, 5).until(EC.text_to_be_present_in_element((By.ID, f"likes-count-{post_id}"), str(likes_count+1)))
         
         likes_switch = thumbs_up.get_attribute('data-likes') 
         self.assertEqual(likes_switch, "on", "Check likes is on for me")
@@ -352,6 +388,7 @@ class BrowserLikesTestCase(StaticLiveServerTestCase):
         dislikes_count = int(browser.find_element(By.ID, f"dislikes-count-{post_id}").text)
 
         thumbs_down.click()    
+        WebDriverWait(browser, 5).until(EC.text_to_be_present_in_element((By.ID, f"dislikes-count-{post_id}"), str(dislikes_count+1)))
         
         likes_switch = thumbs_down.get_attribute('data-likes') 
         self.assertEqual(likes_switch, "on", "Check likes is on for me")

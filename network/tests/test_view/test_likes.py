@@ -143,17 +143,20 @@ class InquiryPagingTestCase(TestCase):
         """
 
         # Like one post and dislike another, and check the like dislikes counts in the response and on the DB.
-        # Also check ofr duplicate likes and dislikes.
+        # Also check for duplicate likes and dislikes.
+        
+        #Like John's post.
         response = self.client.post(reverse('thumbs_click'), 
                                     json.dumps({ 'post_id': self.post[1][2], 'thumbs': True}),
                                     content_type="application/json"
                                     )
-        self.assertEqual(response.status_code, 201, "Check Like registered ok")
+        self.assertEqual(response.status_code, 201, "Check likes registered ok")
         content = json.loads(response.content)
         self.assertEqual(content['message'], "Likes Registered.", "Check likes response message")
         self.assertEqual(content['likes_count'], 1, "Check likes count for post")
         self.assertEqual(content['dislikes_count'], 0, "Check dislikes count")
         
+        #Like John's post again , duplicate.
         response = self.client.post(reverse('thumbs_click'), 
                                     json.dumps({ 'post_id': self.post[1][2], 'thumbs': True}),
                                     content_type="application/json"
@@ -162,7 +165,7 @@ class InquiryPagingTestCase(TestCase):
         content = json.loads(response.content)
         self.assertEqual(content['error'], "You already liked this post!", "Check likes response message")
         
-
+        #Dislike Ann's post
         response = self.client.post(reverse('thumbs_click'), 
                                     json.dumps({ 'post_id': self.post[2][2], 'thumbs': False}),
                                     content_type="application/json"
@@ -173,6 +176,7 @@ class InquiryPagingTestCase(TestCase):
         self.assertEqual(content['likes_count'], 0, "Check likes count for post")
         self.assertEqual(content['dislikes_count'], 1, "Check dislikes count")
         
+        #Dislike Ann's post again, duplicate.
         response = self.client.post(reverse('thumbs_click'), 
                                     json.dumps({ 'post_id': self.post[2][2], 'thumbs': False}),
                                     content_type="application/json"

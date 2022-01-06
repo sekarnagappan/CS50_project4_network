@@ -220,10 +220,11 @@ class BrowserProfilesPageTestCase(StaticLiveServerTestCase):
         self.logged_in_user = self.login(self.tester, self.tester_password)        
 
         browser = self.browser
-
+        wait = WebDriverWait(browser, 5, poll_frequency=0.25)
+        
         #Ensure you are on the index, all post page.
         browser.get(f"{self.live_server_url}/index")
-        WebDriverWait(browser, 5).until(EC.presence_of_element_located((By.ID, "newpost-h5")))
+        wait.until(EC.presence_of_element_located((By.ID, "newpost-h5")))
 
         #check there are 21 post and 10 items on this page.
         post_count = int(browser.find_element(By.ID, "post-count").text)
@@ -237,8 +238,8 @@ class BrowserProfilesPageTestCase(StaticLiveServerTestCase):
         profile_user = browser.find_element(By.ID, f"post-user-{post_id}")
         
         profile_user.click() #Click on Jane's post and ensure the profile view is displayed.
-        WebDriverWait(browser, 5).until(EC.presence_of_element_located((By.ID, "profile-view")))
-        WebDriverWait(browser, 5).until(EC.presence_of_element_located((By.ID, "follow-button")))
+        wait.until(EC.presence_of_element_located((By.ID, "profile-view")))
+        wait.until(EC.presence_of_element_located((By.ID, "follow-button")))
         
         profile_id = browser.find_element(By.ID, "profile-id").text
         self.assertEqual(profile_id, 'jane', "Check if the profile shown is for Jane")
@@ -275,6 +276,8 @@ class BrowserProfilesPageTestCase(StaticLiveServerTestCase):
         self.assertFalse(unfollow_button.is_displayed(), "Check the unfollow is not displayed")
         
         follow_button.click() #Click follow
+        wait.until(EC.text_to_be_present_in_element((By.ID, f"followers-count"), '1'))
+
         
         #Ensure followers count increases
         followers_count = int(browser.find_element(By.ID, "followers-count").text)
@@ -292,6 +295,7 @@ class BrowserProfilesPageTestCase(StaticLiveServerTestCase):
         self.assertTrue(unfollow_button.is_enabled(), "check if the unfollow button is enabled.")
 
         unfollow_button.click() #Click unfollow
+        wait.until(EC.text_to_be_present_in_element((By.ID, f"followers-count"), '0'))
         
         #Check follower count is back to 0 and only follow button is visible.
         followers_count = int(browser.find_element(By.ID, "followers-count").text)
@@ -308,13 +312,14 @@ class BrowserProfilesPageTestCase(StaticLiveServerTestCase):
         self.assertFalse(unfollow_button.is_displayed(), "Check the unfollow is not displayed")
         
         follow_button.click() #Click follow again and leave on following on.
-        
+        wait.until(EC.text_to_be_present_in_element((By.ID, f"followers-count"), '1'))
+
         followers_count = int(browser.find_element(By.ID, "followers-count").text)
         self.assertEqual(followers_count, 1, "Check if followers count is 1")
                 
         #Navigate back to all postings view.
         browser.find_element(By.ID, "allpost-nav").click()
-        WebDriverWait(browser, 5).until(EC.presence_of_element_located((By.ID, "newpost-h5")))
+        wait.until(EC.presence_of_element_located((By.ID, "newpost-h5")))
 
         posting_blocks = browser.find_elements(By.NAME, "posting-block")
         self.assertEqual(len(posting_blocks), 10, "Check there are 10 posting on this page")
@@ -324,8 +329,8 @@ class BrowserProfilesPageTestCase(StaticLiveServerTestCase):
         profile_user = browser.find_element(By.ID, f"post-user-{post_id}")
         
         profile_user.click() #Click on Tim's post and check profile is displayed correctly
-        WebDriverWait(browser, 5).until(EC.presence_of_element_located((By.ID, "profile-view")))
-        WebDriverWait(browser, 5).until(EC.presence_of_element_located((By.ID, "follow-button")))
+        wait.until(EC.presence_of_element_located((By.ID, "profile-view")))
+        wait.until(EC.presence_of_element_located((By.ID, "follow-button")))
         
         profile_id = browser.find_element(By.ID, "profile-id").text
         self.assertEqual(profile_id, 'tim', "Check if the profile shown is for Tim")
@@ -334,19 +339,20 @@ class BrowserProfilesPageTestCase(StaticLiveServerTestCase):
         self.assertTrue(follow_button.is_displayed(), "check if the follow button is displayed.")
  
         follow_button.click() #Follow Tim
+        wait.until(EC.text_to_be_present_in_element((By.ID, f"followers-count"), '1'))
                 
         #Navigate back to all posting view.
         browser.find_element(By.ID, "allpost-nav").click()
-        WebDriverWait(browser, 5).until(EC.presence_of_element_located((By.ID, "newpost-h5")))
+        wait.until(EC.presence_of_element_located((By.ID, "newpost-h5")))
 
         #Navigate to page 3 of all posting view.
-        WebDriverWait(browser, 5).until(EC.element_to_be_clickable((By.ID, "select-page-button")))
+        wait.until(EC.element_to_be_clickable((By.ID, "select-page-button")))
         select_option = Select(browser.find_element(By.ID, "select-page"))
         select_button = browser.find_element(By.ID, "select-page-button")
         select_option.select_by_visible_text(str(3))
         select_button.submit() #Go to page 3
         
-        WebDriverWait(browser, 5).until(EC.presence_of_element_located((By.ID, "profile-view")))
+        wait.until(EC.presence_of_element_located((By.ID, "profile-view")))
         page_number = int(browser.find_element(By.ID, "page-number").text)
         self.assertEqual(page_number, 3, "Check if on the page")    
         
@@ -358,7 +364,7 @@ class BrowserProfilesPageTestCase(StaticLiveServerTestCase):
         profile_user = browser.find_element(By.ID, f"post-user-{post_id}")
         
         profile_user.click() #Click on sekar's post
-        WebDriverWait(browser, 5).until(EC.presence_of_element_located((By.ID, "profile-view")))
+        wait.until(EC.presence_of_element_located((By.ID, "profile-view")))
         
         #Ensure selar's profile is displayed.
         profile_id = browser.find_element(By.ID, "profile-id").text
@@ -378,16 +384,16 @@ class BrowserProfilesPageTestCase(StaticLiveServerTestCase):
         #logout and login as John.
         self.logout()
         self.login('john', self.tester_password)
-        WebDriverWait(browser, 5).until(EC.presence_of_element_located((By.ID, "newpost-h5")))
+        wait.until(EC.presence_of_element_located((By.ID, "newpost-h5")))
 
         #Go to page 3.
-        WebDriverWait(browser, 5).until(EC.element_to_be_clickable((By.ID, "select-page-button")))
+        wait.until(EC.element_to_be_clickable((By.ID, "select-page-button")))
         select_option = Select(browser.find_element(By.ID, "select-page"))
         select_button = browser.find_element(By.ID, "select-page-button")
         select_option.select_by_visible_text(str(3))
         select_button.submit() #Go to page 3
         
-        WebDriverWait(browser, 5).until(EC.presence_of_element_located((By.ID, "profile-view")))
+        wait.until(EC.presence_of_element_located((By.ID, "profile-view")))
         page_number = int(browser.find_element(By.ID, "page-number").text)
         self.assertEqual(page_number, 3, "Check if on the page")    
         
@@ -398,7 +404,7 @@ class BrowserProfilesPageTestCase(StaticLiveServerTestCase):
         profile_user = browser.find_element(By.ID, f"post-user-{post_id}")
         
         profile_user.click() #Click on sekar's post, and ensure on sekar's profile page
-        WebDriverWait(browser, 5).until(EC.presence_of_element_located((By.ID, "profile-view")))
+        wait.until(EC.presence_of_element_located((By.ID, "profile-view")))
         
         profile_id = browser.find_element(By.ID, "profile-id").text
         self.assertEqual(profile_id, 'sekar', "Check if the profile shown is for Sekar")
@@ -418,7 +424,8 @@ class BrowserProfilesPageTestCase(StaticLiveServerTestCase):
         self.assertFalse(unfollow_button.is_displayed(), "Check the unfollow is not displayed")
         
         follow_button.click() #Click follow and check follower count is increased.
-        
+        wait.until(EC.text_to_be_present_in_element((By.ID, f"followers-count"), '1'))
+
         followers_count = int(browser.find_element(By.ID, "followers-count").text)
         self.assertEqual(followers_count, 1, "Check if followers count is 1")
         
