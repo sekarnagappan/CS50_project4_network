@@ -186,11 +186,11 @@ class InquiryPagingTestCase(TestCase):
         content = json.loads(response.content)
         self.assertEqual(content['error'], "You already disliked this post!", "Check likes response message")
     
-        john_likes_count = Likes.objects.filter(liker=1, likes_active=True,post_id=self.post[1][2], likes=True).count()
-        self.assertEqual(john_likes_count, 1)
+        likes_count = Likes.objects.filter(likes_active=True,post_id=self.post[1][2], likes=True).count()
+        self.assertEqual(likes_count, 1)
         
-        ann_dislikes_count = Likes.objects.filter(liker=1, likes_active=True, post_id=self.post[2][2], likes=False).count()
-        self.assertEqual(ann_dislikes_count, 1)
+        dislikes_count = Likes.objects.filter(likes_active=True, post_id=self.post[2][2], likes=False).count()
+        self.assertEqual(dislikes_count, 1)
                       
         #Login as Tim and like and dislike the same post. Count of likes and dislikes should increase to 2.
         logged_in = self.client.login(username='tim', password=self.tester_password) 
