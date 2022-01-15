@@ -5,5 +5,36 @@
 .project
 .pydevproject
 .settings
-db.sqbpro
+.env
+*.log
+.dockerignore
+Dockerfile
+__pycache__
 venv
+# Compiled source #
+###################
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+# Packages #
+############
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Logs and databases #
+######################
+*.log
+*.sql
+*.sqlite3
+db.sqlite3
+db.sqbpro
+
