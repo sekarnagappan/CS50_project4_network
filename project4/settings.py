@@ -34,10 +34,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # from django.core.management.utils import get_random_secret_key
 # get_random_secret_key()
 
-SECRET_KEY = os.environ.get('SECRET_KEY')
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG')
+DEBUG = env('DEBUG')
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
