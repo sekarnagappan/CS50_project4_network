@@ -37,18 +37,21 @@ jobs:
         POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
         POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
       run: python manage.py makemigrations
     - name: Run migrations
       env:
         POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
         POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
       run: python manage.py migrate
     - name: run Django unit test
       env:
         POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
         POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
       run: |
         python manage.py test
  
