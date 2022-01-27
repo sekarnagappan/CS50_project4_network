@@ -8,6 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import ElementNotInteractableException
 from django.utils import timezone
+from password_generator import PasswordGenerator
 
 from network.models import User, Postings, Followings, Likes
 import logging
@@ -17,7 +18,8 @@ class BrowserPostingTestCase(StaticLiveServerTestCase):
     Test create and edit postings.
     """
     tester = "sekar"
-    tester_password = "passwword"
+    pwo = PasswordGenerator()
+    tester_password = pwo.generate()
     post_setup_count = 0
     browser = ""
     test_browser = ""

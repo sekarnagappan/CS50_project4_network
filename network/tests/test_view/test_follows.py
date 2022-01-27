@@ -1,6 +1,7 @@
 from django.test import TestCase, Client
 from django.utils import timezone
 from django.urls import reverse
+from password_generator import PasswordGenerator
 
 from network.models import User, Postings, Followings, Likes
 import json, logging
@@ -12,7 +13,8 @@ class FollowsTestCase(TestCase):
     
     client = Client()
     tester = "sekar"
-    tester_password = "password"
+    pwo = PasswordGenerator()
+    tester_password = pwo.generate()
     post_setup_count = 0
     post = []
     

@@ -10,6 +10,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import ElementClickInterceptedException, TimeoutException
 from django.utils import timezone
 import logging
+from password_generator import PasswordGenerator
+
 
 from network.models import User, Postings, Followings, Likes
 
@@ -19,7 +21,8 @@ class BrowserFollowingsTestCase(StaticLiveServerTestCase):
     """
     test_browser = "Chrome"
     tester = "sekar"
-    tester_password = "password"
+    pwo = PasswordGenerator()
+    tester_password = pwo.generate()
     post_setup_count = 0
     browser = ""
     test_browser = ""

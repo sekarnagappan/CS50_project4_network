@@ -1,0 +1,67 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres
+    networks:
+      mynetwork: {}
+      
+    restart: always
+    environment:
+      POSTGRES_USER_FILE: /run/secrets/POSTGRES_USER
+      POSTGRES_PASSWORD_FILE: /run/secrets/POSTGRES_PASSWORD
+      POSTGRES_DB_FILE: /run/secrets/POSTGRES_DB
+    secrets:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+    ports:
+      - 5432:5432
+    volumes: 
+      - db:/var/lib/postgresql/data
+    
+  web:
+    image: 127.0.0.1:5000/cs50_web
+    networks:
+      mynetwork: {}
+    
+    build: .
+    volumes:
+        - .:/usr/src/app
+    ports:
+        - 8080:8080
+    environment:
+      POSTGRES_USER_FILE: /run/secrets/POSTGRES_USER
+      POSTGRES_PASSWORD_FILE: /run/secrets/POSTGRES_PASSWORD
+      POSTGRES_DB_FILE: /run/secrets/POSTGRES_DB
+      SECRET_KEY: /run/secrets/SECRET_KEY
+      DOCKER_ENV: "True"
+    secrets:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+      - SECRET_KEY
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    depends_on:
+      - db  
+        
+volumes:
+  db:
+    driver: local 
+
+networks:
+  mynetwork:
+    name: cs50_network
+      
+secrets:
+  POSTGRES_USER:
+    external: true
+  POSTGRES_PASSWORD:
+    external: true
+  POSTGRES_DB:
+    external: true
+  SECRET_KEY:
+    external: true
+  

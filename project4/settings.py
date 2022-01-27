@@ -14,7 +14,7 @@ from pathlib import Path
 import os, logging
 from django.contrib.messages import constants as messages
 import environ
-
+    
 env = environ.Env(
     # set casting, default value
     DEBUG=(bool, False)
@@ -87,7 +87,6 @@ WSGI_APPLICATION = 'project4.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
-
 if os.environ.get('GITHUB_WORKFLOW'):
     DATABASES = {
         'default': {
@@ -98,7 +97,18 @@ if os.environ.get('GITHUB_WORKFLOW'):
             'HOST': 'localhost',
             'PORT': '5432',
         }
-    }
+    }  
+elif os.environ.get('DOCKER_ENV') :
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': env('POSTGRES_DB_FILE'),
+            'USER': env('POSTGRES_USER_FILE'),
+            'PASSWORD': env('POSTGRES_PASSWORD_FILE'),
+            'HOST': 'db',
+            'PORT': '5432',
+        }
+    }        
 else:
     DATABASES = {
         'default': env.db()
@@ -185,3 +195,4 @@ LOGGING = {
         }
     }
 }
+
