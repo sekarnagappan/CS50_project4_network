@@ -1,4 +1,4 @@
-{% extends "network/layout.html" %}
+f{% extends "network/layout.html" %}
 
 {% block body %}
 <div id="sections" data-sections="{{ sections }}">
@@ -59,7 +59,8 @@
         {% else %}
         <button id="edit-{{ post.id }}" style="display: block" class="btn btn-sm btn-primary float-end" onclick="edit_post('{{ post.id }}')">Edit</button>
         {% endif %}
-        <button id="post-{{ post.id }}" style="display: none" class="btn btn-sm btn-primary float-end me-1" onclick="update_post('{{ post.id }}')">Post</button>
+        <button id="post-{{ post.id }}" style="display: none" class="btn btn-sm btn-primary float-end me-1" onclick="update_post('{{ post.id }}')">Save</button>
+        <button id="cancel-edit-{{ post.id }}" style="display: none" class="btn btn-sm btn-primary float-end me-1" onclick="cancel_edit_post('{{ post.id }}')">Cancel</button>
         <form id="postings-form-{{ post.id }}">
           {% csrf_token %}
           <textarea class="form-control" disabled data-textarea="{{ post.id }}" id="postings-body-{{ post.id }}" name="post_text">{{ post.post_text }}</textarea>

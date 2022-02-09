@@ -15,7 +15,6 @@ import math, decimal, sys, logging, os
 
 from .models import User, Postings, Followings, Likes
 
-
 # Python logger, for logging error
 logger = logging.getLogger(__name__)
 
@@ -30,6 +29,7 @@ def index(request):
         return render(request, "network/index.html", context)
     else:
         return HttpResponseRedirect(reverse("login"))
+
 
 @login_required
 def make_posting(request):
@@ -77,11 +77,12 @@ def make_posting(request):
             posting.save()
             if (post_id):
                 original_post.save()
-                #print(f"Posted Update. {original_post.id}")
+                # print(f"Posted Update. {original_post.id}")
     except IntegrityError:
         messages.error(request, "Sorry, I am not able to update the post, a technical error has occurred.")
 
     return JsonResponse({"message": "Posting Done.", "posting_pk": f"{posting.id}"}, status=201)
+
 
 @login_required
 def view_all_post(request):
@@ -90,6 +91,7 @@ def view_all_post(request):
     request, context = view_postings(request, context, "All")
 
     return render(request, "network/index.html", context)
+
 
 @login_required
 def view_profile(request):
@@ -104,6 +106,7 @@ def view_profile(request):
 
     return render(request, "network/index.html", context)
 
+
 @login_required
 def followings(request):
     # This function is called to view postings of users this user is following on the profile page. 
@@ -113,6 +116,7 @@ def followings(request):
     request, context = view_postings(request, context, "Followings")
 
     return render(request, "network/index.html", context)
+
 
 @login_required
 def view_postings(request, context, filter="All", profile_id=""):
@@ -180,7 +184,7 @@ def view_postings(request, context, filter="All", profile_id=""):
                         'followings': profile_followings,
                         'profile_usr': profile_id,
                         'user_follows': user_follows,
-                        'sections' : filter,
+                        'sections': filter,
                         'start_index': paginator.page(postlist.number).start_index(),
                         'end_index': paginator.page(postlist.number).end_index(),
                         'querystr_prefix': f"profile_id={ profile_id }&" if profile_id else ""
@@ -207,7 +211,7 @@ def thumbs_click(request):
     likes = post.liked_post.filter(likes_active=True).filter(liker=user).first()
 
     if (thumbs_up is None and likes is None):
-        #print("Messages should not be here, most like so db record corruption")
+        # print("Messages should not be here, most like so db record corruption")
         return JsonResponse({"error": "Shouldn't be here, nothing to register"}, status=428)
 
     if (thumbs_up == True and likes is not None and likes.likes == True):
@@ -215,7 +219,6 @@ def thumbs_click(request):
     
     if (thumbs_up == False and likes is not None and likes.likes == False):
         return JsonResponse({'error': "You already disliked this post!"}, status=428)
-
 
     if (thumbs_up is None):
         if (likes.likes == True):
@@ -232,7 +235,7 @@ def thumbs_click(request):
         except IntegrityError:
             messages.error(request, "Sorry, I am not able to update the likes, a technical error has occurred.")
 
-        #print("Exiting thumbs up - True")
+        # print("Exiting thumbs up - True")
         return JsonResponse({"message": "Likes Cleared.",
                             'likes_count': post.likes_count,
                             'dislikes_count': post.dislikes_count }, status=201)
@@ -258,7 +261,7 @@ def thumbs_click(request):
         except IntegrityError:
             messages.error(request, "Sorry, I am not able to update the likes, a technical error has occured.")
 
-        #print("Exiting thumbs up - True")
+        # print("Exiting thumbs up - True")
         return JsonResponse({"message": "Likes Registered.",
                             'likes_count': post.likes_count,
                             'dislikes_count': post.dislikes_count }, status=201)
@@ -284,7 +287,7 @@ def thumbs_click(request):
         except IntegrityError:
             messages.error(request, "Sorry, I am not able to update the likes, a technical error has occured.")
 
-        #print("Exiting thumbs up - False")
+        # print("Exiting thumbs up - False")
         return JsonResponse({"message": "Dislike Registered.",
                             'likes_count': post.likes_count,
                             'dislikes_count': post.dislikes_count }, status=201)
@@ -385,7 +388,7 @@ def login_view(request):
         # Check if authentication successful
         if user is not None:
             login(request, user)
-            #print(f'User logged in: {username}')
+            # print(f'User logged in: {username}')
             return HttpResponseRedirect(reverse("index"))
         else:
             return render(request, "network/login.html", {

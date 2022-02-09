@@ -9,18 +9,18 @@ function load_index() {
   let sections = document.querySelector("#sections");
 
   if (sections.dataset.sections == "Profile") {
-      // Show the mailbox and hide other views
-      document.querySelector('#newpost-view').style.display = 'none';
-      document.querySelector('#profile-view').style.display = 'block';
-      document.querySelector('#followings-view').style.display = 'none';
-      document.querySelector('#postings-view').style.display = 'block';
+    // Show the mailbox and hide other views
+    document.querySelector('#newpost-view').style.display = 'none';
+    document.querySelector('#profile-view').style.display = 'block';
+    document.querySelector('#followings-view').style.display = 'none';
+    document.querySelector('#postings-view').style.display = 'block';
 
   } else if (sections.dataset.sections == "Followings") {
-      // Show the mailbox and hide other views
-      document.querySelector('#newpost-view').style.display = 'none';
-      document.querySelector('#profile-view').style.display = 'none';
-      document.querySelector('#followings-view').style.display = 'block';
-      document.querySelector('#postings-view').style.display = 'block';
+    // Show the mailbox and hide other views
+    document.querySelector('#newpost-view').style.display = 'none';
+    document.querySelector('#profile-view').style.display = 'none';
+    document.querySelector('#followings-view').style.display = 'block';
+    document.querySelector('#postings-view').style.display = 'block';
 
   } else {
     // Show the mailbox and hide other views
@@ -35,13 +35,13 @@ function load_index() {
     document.querySelector('#postings-form').onsubmit = () => {
       if (posting_body.value !== "") {
         make_posting('/make_posting', posting_body.value);
-          return false;
-        } else {
-          alert("No Post made: Your posting text is empty!")
-          return false;
-        }
-      };
-    }
+        return false;
+      } else {
+        alert("No Post made: Your posting text is empty!")
+        return false;
+      }
+    };
+  }
 
   document.querySelectorAll('.bi-hand-thumbs-up').forEach(t => {
     if (t.dataset.svg == "True") {
@@ -86,19 +86,19 @@ function make_posting(url, text, post_id = null) {
             console.log(`Response Message: ${result.message} ID: ${result.posting_pk}`)
             alert(`Response Message: ${result.message} ID: ${result.posting_pk}`);
             //load_index();
-            let select_page = document.querySelector('#select_page');
-            if ( select_page == null ){
+            let select_page = document.querySelector('#select-page');
+            if (select_page == null) {
               window.location.reload()
             } else {
-              let select_page_button = document.querySelector('#select_page_button');
+              let select_page_button = document.querySelector('#select-page-button');
 
               select_page.addEventListener("change", (e) => {
-              select_page_button.click();
+                select_page_button.click();
               });
 
               select_page.value = 1;
               select_page.dispatchEvent(new Event('change'));
-          }
+            }
 
 
             return Promise.resolve(true);
@@ -123,9 +123,9 @@ function edit_post(post_id) {
     let foreach_id = textarea.dataset.textarea
     if (foreach_id != 0) {
       if (textarea.disabled == false) {
-        if (textarea.defaultValue !== textarea.value) {
-          textarea.value = textarea.defaultValue;
-        }
+	      if (textarea.defaultValue !== textarea.value) {
+	        textarea.value = textarea.defaultValue;
+	      } 
       }
       textarea.disabled = true;
       const posting_user = (document.getElementById('post-user-' + foreach_id).textContent);
@@ -135,11 +135,14 @@ function edit_post(post_id) {
         document.querySelector('#edit-' + foreach_id).style.display = 'none';
       }
       document.querySelector('#post-' + foreach_id).style.display = 'none';
+      document.querySelector('#cancel-edit-' + foreach_id).style.display = 'none';
     }
   });
   document.querySelector('#postings-body-' + post_id).disabled = false;
   document.querySelector('#edit-' + post_id).style.display = 'none';
   document.querySelector('#post-' + post_id).style.display = 'block';
+  document.querySelector('#cancel-edit-' + post_id).style.display = 'block';
+
 }
 
 function update_post(post_id) {
@@ -155,8 +158,27 @@ function update_post(post_id) {
   }
 
   document.querySelector('#postings-body-' + post_id).disabled = true;
+  document.querySelector('#cancel-edit-' + post_id).style.display = 'none';
   document.querySelector('#post-' + post_id).style.display = 'none';
+  document.querySelector('#edit-' + post_id).style.display = 'block';
 
+
+}
+
+function cancel_edit_post(post_id){
+	
+	if (confirm("Please, confirm you want to abort this edit?")) {
+		let textarea = document.getElementById('postings-body-' + post_id)
+		if (textarea.defaultValue !== textarea.value) {
+	        textarea.value = textarea.defaultValue;
+		}
+	document.querySelector('#postings-body-' + post_id).disabled = true;
+	document.querySelector('#cancel-edit-' + post_id).style.display = 'none';
+	document.querySelector('#post-' + post_id).style.display = 'none';
+	document.querySelector('#edit-' + post_id).style.display = 'block';
+
+
+	}
 }
 
 function thumbs_up(post_id) {
@@ -301,14 +323,14 @@ function follow(follow) {
             document.getElementById("followings-count").textContent = result.followings_count;
             document.getElementById("followers-count").textContent = result.followers_count;
 
-			if (result.user_follows == 0 ){
-				document.getElementById("follow-button").style.display = "block";
-				document.getElementById("unfollow-button").style.display = "none";
+            if (result.user_follows == 0) {
+              document.getElementById("follow-button").style.display = "block";
+              document.getElementById("unfollow-button").style.display = "none";
 
-			} else {
-				document.getElementById("follow-button").style.display = "none";
-				document.getElementById("unfollow-button").style.display = "block";
-			}
+            } else {
+              document.getElementById("follow-button").style.display = "none";
+              document.getElementById("unfollow-button").style.display = "block";
+            }
 
             return Promise.resolve(true);
           });
