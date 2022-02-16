@@ -54,7 +54,7 @@ __pycache__
 venv/
 node_modules/
 temp/
-
+doc/
 #My Notes
 #########
 mynotes/
