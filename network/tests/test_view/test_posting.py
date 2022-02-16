@@ -198,7 +198,7 @@ class NetworkTestCase(TestCase):
                                     content_type="application/json")
         self.assertEqual(response.status_code, 403, "Check expected response code")
         content = json.loads(response.content)
-        self.assertEqual(content['error'], "You cannot edit this post.", "Check error message")
+        self.assertEqual(content['error'], "You cannot edit someone else's post.", "Check error message")
         
         post_count = Postings.objects.count()
         self.assertEqual(post_count, pre_count, "Check record count did not change.")

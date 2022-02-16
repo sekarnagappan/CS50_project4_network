@@ -1,0 +1,5 @@
+test_followings_selenium.py
+test_likes_selenium.py
+test_navigation_selenium.py
+test_postings_selenium.py
+test_profile_selenium.py

@@ -13,15 +13,23 @@ from django.utils import timezone
 import json
 import math, decimal, sys, logging, os
 
-from .models import User, Postings, Followings, Likes
+from network.models import User, Postings, Followings, Likes
 
 # Python logger, for logging error
 logger = logging.getLogger(__name__)
 
 
 def index(request):
-    # The default entry point.
-    # Display index page with all postings if user is logged in, else displays the login page.
+    """
+    The default start point.
+    Display index page with all postings if user is logged in, else displays the login page.
+    
+    Args:
+        request: The post request message from the browser
+        
+    Returns:
+        The Index or the login page.
+    """
 
     context = {}
     if request.user.is_authenticated:
@@ -33,8 +41,21 @@ def index(request):
 
 @login_required
 def make_posting(request):
-    # Add a new posting to the DB, or update an existing posting if the post_id is
-    # present in the request.
+    """
+    Add a new posting to the DB, or update an existing posting if the post_id is the request
+    is present.
+    
+    Args:
+        request: The post request message from the browser
+        
+    Returns:
+        If posting is successful return a Json response with the following fields:
+        status: 201
+        posting_pk: Posting id
+        messages: "Posting Done"
+        
+        Else a Json response is returned with the error status code and a error message.
+    """
 
     # A make_posting request must be via POST
     if request.method != "POST":
@@ -58,7 +79,7 @@ def make_posting(request):
         original_post = get_object_or_404(Postings, pk=post_id)
         if (user.id != original_post.posting_user.id):
             return JsonResponse({
-            "error": "You cannot edit this post."
+            "error": "You cannot edit someone else's post."
             }, status=403)
         original_post.post_superceded = True
         original_post.supercede_ts = timezone.now()
@@ -86,7 +107,15 @@ def make_posting(request):
 
 @login_required
 def view_all_post(request):
-    # This function is called to view all posting. It calls the view_posting function with the parameter "All"
+    """
+    This function is called to view all postings. It calls the view_posting function with the parameter 'All'
+    
+    Args:
+        request: The post request message from the browser
+        
+    Returns:
+        the index page.
+    """
     context = {}
     request, context = view_postings(request, context, "All")
 
@@ -95,8 +124,18 @@ def view_all_post(request):
 
 @login_required
 def view_profile(request):
-    # This function is called to view postings for a user on the profile page. 
-    # It calls the view_posting function with the parameter "Profile"
+    """
+    This function is called to view postings for a user on the profile page. 
+    It calls the view_posting function with the parameter 'Profile'
+    
+    Args:
+        request: The post request message from the browser
+        
+    Returns:
+        request,
+        the index page.
+        context.
+    """
 
     profile_id = request.GET.get('profile_id', '')
     page = request.GET.get('page', '')
@@ -109,8 +148,16 @@ def view_profile(request):
 
 @login_required
 def followings(request):
-    # This function is called to view postings of users this user is following on the profile page. 
-    # It calls the view_posting function with the parameter "Followings"
+    """
+    This function is called to view postings of users this user is following on the profile page. 
+    It calls the view_posting function with the parameter 'Followings'
+    
+    Args:
+        request: The post request message from the browser
+        
+    Returns:
+        the index page.
+    """
 
     context = {}
     request, context = view_postings(request, context, "Followings")
@@ -120,13 +167,27 @@ def followings(request):
 
 @login_required
 def view_postings(request, context, filter="All", profile_id=""):
-    # This functions retrieves a list of posting depending on the filter parameter passed. 
-    # If filter is set to "All", all active posting records are passed. 
-    # If filter is "Profile", a profile_id must be provided. And the function will return all active records for the profile id.
-    # If filter is "Followings" all active posting records for all users this user follows if return. 
-    # In addition to the postings records, the function will retrieve if the user has a like or dislike for the post.
-    # It will use a paginator to return 10 post per request.
-
+    """
+    This functions retrieves a list of posting depending on the filter parameter passed. 
+    If filter is set to "All", all active posting records are passed. 
+    If filter is "Profile", a profile_id must be provided. And the function will return all active 
+    records for the profile id.
+    If filter is "Followings" all active posting records for all users this user follows if return. 
+    In addition to the postings records, the function will retrieve if the user has likes or 
+    dislike for the post.
+    It will use a paginator to return 10 post per request.
+    
+    Args:
+        request: The post request message from the browser or calling functions
+        context: A blank context to fill and return
+        filter (Optional): a string with possible values of 'All', 'Profile' or 'Followings'. Defaults to 'All'
+        profile_id (Optional): If the filter is 'Profile', this is to be the user for whom the 
+        posting will be returned.Defaults to blank, and if blank no records will be returned.
+    Returns:
+        request: The original request 
+        context:.The context with the requested information.
+    """
+    
     heading = ""
     profile_follows = 0
     profile_followings = 0
@@ -145,8 +206,6 @@ def view_postings(request, context, filter="All", profile_id=""):
             profile_follows = profile_usr.follower.filter(following_active=True).count()  # the number of people the profiled user follows.
             profile_followings = profile_usr.follows.filter(following_active=True).count()  # the number people following the profiled user
             user_follows = profile_usr.follows.filter(following_active=True).filter(follower=usr).count()
-            # print(f"Followings count {profile_id}{profile_follows}, {profile_followings}")
-            # list = Postings.objects.all().filter(posting_user=profile_usr).filter(post_superceded=False).order_by('-post_ts')
             list = Postings.objects.raw('select * from network_postings left outer join network_likes on ' \
                                         ' ( network_postings.id = network_likes.post_id_id AND network_likes.likes_active = True ' \
                                         ' and (network_likes.liker_id = %s)) ' \
@@ -159,7 +218,6 @@ def view_postings(request, context, filter="All", profile_id=""):
         else:
             heading = "All Posts"
 
-            # list = Postings.objects.all().filter(post_superceded=False).order_by('-post_ts')
             list = Postings.objects.raw('select * from network_postings left outer join network_likes on ' \
                                         ' ( network_postings.id = network_likes.post_id_id AND network_likes.likes_active = True ' \
                                         ' and (network_likes.liker_id = %s )) '\
@@ -196,8 +254,26 @@ def view_postings(request, context, filter="All", profile_id=""):
 
 @login_required
 def thumbs_click(request):
-    # This function records likes and dislikes, based on the request.
-    # The request must provide the post_id to updated, and weather to record a like, a dislike, or remove a like or dislike.
+    """
+    This function records likes and dislikes, based on the request. Whenever a thumbs up or down is clicked,
+    this function is called to record the likes, dislike and the count.
+    
+    Args:
+        request: The post request message from the browser. The json payload should contain the 
+        post id and action clicked(thumbs up/down).
+        
+    Returns:
+        request: The function return a json response with the result, which could be one of the following,
+        If successful,
+            status: 201
+            message: "Like cleared" or  "Like Registered" or "Dislikes Registered
+        
+        Else a error status and an error message is returned.
+        
+    The request must provide the post_id to updated, and weather to record a like, a dislike, 
+    or remove a like or dislike.
+    """
+    
     if request.method != "POST":
         return JsonResponse({"error": "POST request required."}, status=400)
 
@@ -297,7 +373,18 @@ def thumbs_click(request):
 
 @login_required
 def follows(request):
-
+    """
+    This receives request to follow or unfollow someone.
+    
+    Args:
+        request: The post request message from the browser. The json payload should contain the profile 
+        id of the person to follow/unfollow and the indicator to follow or unfollow.
+        
+    Returns:
+        request: the request paylod will have json response with the status of the update and the 
+        follower / followings count
+    """
+    
     if request.method != "POST":
         return JsonResponse({"error": "POST request required."}, status=400)
 
@@ -378,6 +465,10 @@ def follows(request):
 
 
 def login_view(request):
+    """
+    This is handles a login request. Using the username and password in the Post payload, a login will 
+    be attempted. If authentication is sucessful, the use will be lo
+    """
     if request.method == "POST":
 
         # Attempt to sign user in
@@ -399,11 +490,17 @@ def login_view(request):
 
 
 def logout_view(request):
+    """
+    This function handles a logout request. It will logout whoever's ID is in the request.
+    """
     logout(request)
     return HttpResponseRedirect(reverse("index"))
 
 
 def register(request):
+    """
+    This function handles a registeration request. the request should provide the user ID, email and password.
+    """
     if request.method == "POST":
         username = request.POST["username"]
         email = request.POST["email"]
